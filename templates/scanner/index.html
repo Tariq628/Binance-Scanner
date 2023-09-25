@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <title>Binance Scanner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #f2f2f2;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+            margin: 0;
+        }
+
+        .table-container {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .modern-table {
+            border-collapse: collapse;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .modern-table th,
+        .modern-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .modern-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .modern-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .logout-button {
+            background-color: #261717;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            float: left;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logout">
+        <!-- Logout button -->
+        <form method="post" action="/logout">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </div>
+    <h1>Binance Scanner</h1>
+    <div style="position: absolute; top: 20px; right: 20px;">
+        <form method="get" action="">
+            <label for="timeframe">Select Timeframe:</label>
+            <select id="timeframe" name="timeframe" onchange="this.form.submit()">
+                <option value="5" {% if request.GET.timeframe == '5' %}selected{% endif %}>5m</option>
+                <option value="15" {% if request.GET.timeframe == '15' %}selected{% endif %}>15m</option>
+            </select>
+        </form>
+    </div>
+</div>
+<div class="table-container">
+    <table class="modern-table">
+        <thead>
+        <tr>
+            <th>Coin name</th>
+            <th>Latest RSI</th>
+            <th>ADX</th>
+            <th>Volume</th>
+            <th>EMA</th>
+            <th>ROC</th>
+            <th>Beta</th>
+            <th>20-point SMA</th>
+            <th>Super Trend</th>
+            <th>Slope in %</th>
+            <th>Intercept</th>
+            <th>R-Squared</th>
+            <th>Standard Deviation</th>
+            <th>Closing price($)</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in coin_stats %}
+            <tr>
+                <td>{{ row.coin.name }}</td>
+                <td class="editable-cell" data-model-name="latest_rsi">{{ row.lower_latest_rsi.normalize }}
+                    - {{ row.upper_latest_rsi.normalize }}</td>
+                <td class="editable-cell" data-model-name="adx">{{ row.lower_adx.normalize }}
+                    - {{ row.upper_adx.normalize }}</td>
+                <td class="editable-cell" data-model-name="volume">{{ row.lower_volume.normalize }}
+                    - {{ row.upper_volume.normalize }}</td>
+                <td class="editable-cell" data-model-name="ema">{{ row.lower_ema.normalize }}
+                    - {{ row.upper_ema.normalize }}</td>
+                <td class="editable-cell" data-model-name="roc">{{ row.lower_roc.normalize }}
+                    - {{ row.upper_roc.normalize }}</td>
+                <td class="editable-cell" data-model-name="beta">{{ row.lower_beta.normalize }}
+                    - {{ row.upper_beta.normalize }}</td>
+                <td class="editable-cell" data-model-name="sma_20">{{ row.lower_sma_20.normalize }}
+                    - {{ row.upper_sma_20.normalize }}</td>
+                <td class="editable-cell" data-model-name="super_trend">{{ row.lower_super_trend.normalize }}
+                    - {{ row.upper_super_trend.normalize }}</td>
+                <td class="editable-cell" data-model-name="slope_percent">{{ row.lower_slope_percent.normalize }}
+                    - {{ row.upper_slope_percent.normalize }}</td>
+                <td class="editable-cell" data-model-name="intercept">{{ row.lower_intercept.normalize }}
+                    - {{ row.upper_intercept.normalize }}</td>
+                <td class="editable-cell" data-model-name="r_squared">{{ row.lower_r_squared.normalize }}
+                    - {{ row.upper_r_squared.normalize }}</td>
+                <td class="editable-cell" data-model-name="std_deviation">{{ row.lower_std_deviation.normalize }}
+                    - {{ row.upper_std_deviation.normalize }}</td>
+                <td class="editable-cell" data-model-name="closing_price">{{ row.lower_closing_price.normalize }}
+                    - {{ row.upper_closing_price.normalize }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+<script type="text/javascript">
+    $(document).ready(function () {
+        // Parse the URL to get the 'timeframe' parameter value
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        var isCellActive = false;
+        $('.editable-cell').click(function () {
+            if (isCellActive) {
+                return; // Ignore the click if the cell is already active
+            }
+            var cell = $(this);
+            var value = cell.text().trim();
+            var range = value.split('-');
+            var input1 = $('<input>').val(range[0].trim());
+            var input2 = $('<input>').val(range[1].trim());
+            var saveButton = $('<button>').text('Save'); // Add a 'Save' button
+            var cancelButton = $('<button>').text('Cancel'); // Add a 'Cancel' button
+
+            cell.empty();
+            cell.append(input1);
+            cell.append(' - ');
+            cell.append(input2);
+            cell.append(saveButton); // Append the 'Save' button to the cell
+            cell.append(cancelButton); // Append the 'Cancel' button to the cell
+
+            input1.focus();
+
+            // Handle the 'Save' button click
+            saveButton.click(function () {
+                var newValue = input1.val() + ' - ' + input2.val();
+                cell.empty();
+                cell.text(newValue);
+
+                // Get the parameters needed for the API request
+                var coinName = cell.closest('tr').find('td:first-child').text().trim();
+                var paramToEdit = cell.attr('data-model-name');
+                var updatedValue = newValue;
+
+                // Send the updated values to the API endpoint using jQuery Ajax
+                $.ajax({
+                    url: 'update_coin_stats',
+                    method: 'POST',
+                    data: {
+                        coin_name: coinName,
+                        timeframe: getUrlParameter('timeframe'),
+                        param_to_edit: paramToEdit,
+                        value: updatedValue
+                    },
+                    success: function (response) {
+                        console.log('Values updated successfully');
+                        location.reload();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error updating values:', error);
+                    }
+                });
+                isCellActive = false; // Reset the active state
+            });
+
+            // Handle the 'Cancel' button click
+            cancelButton.click(function () {
+                location.reload(); // Refresh the page to cancel the edit
+            });
+
+            isCellActive = true;
+        });
+
+        $(document).click(function (event) {
+            var target = $(event.target);
+            if (!target.hasClass('editable-cell')) {
+                // Reset the active state if the click is outside of the editable cells
+                isCellActive = false;
+            }
+        });
+    });
+
+</script>
+</html>
