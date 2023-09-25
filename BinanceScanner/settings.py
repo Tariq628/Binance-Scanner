@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-bprt(2mgx=fss0d@n8613xx+in-%bkfn^$i1$x_g%so#0f9k!%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
